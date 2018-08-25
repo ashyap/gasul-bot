@@ -1,18 +1,15 @@
 #Python libraries that we need to import for our bot
 import random
+import requests
 import os
 import json
 from flask import Flask, request
 from pymessenger.bot import Bot
 from pymessenger import Element, Button
 import os
+
 app = Flask(__name__)
-ACCESS_TOKEN = os.environ['ACCESS_TOKEN']
-VERIFY_TOKEN = os.environ['VERIFY_TOKEN']
-bot = Bot (ACCESS_TOKEN)
-branch_locations = []
-with open("branches.json") as f:
-    branch_locations = json.load(f)
+
 #We will receive messages that Facebook sends our bot at this endpointc
 @app.route("/", methods=['GET', 'POST'])
 def receive_message():
@@ -49,8 +46,11 @@ def receive_message():
                     send_products(recipient_id)
                 elif message['postback'].get('payload') == 'schedule':
                     return send_message(recipient_id, "Operating hours are "
-                                        + "from Mon. to Sat. 8am to 5:30pm")
-                elif message['postback'].get('payload') == 'help':
+                                        + "from Mon. to Sat. 8am to 5:30pm. "
+                                        + "You may contact us at 226-2992 "
+                                        + "or 0999-889-6448")
+                elif (message['postback'].get('payload') == 'help' or
+                     message['postback'].get('payload').lower() == 'get started'):
                     return send_menu(recipient_id)
     return "Message Processed"
 
@@ -67,7 +67,7 @@ def verify_fb_token(token_sent):
 def get_message(text, recipient_id, branch_list):
     if text.lower() == 'help':
         branches_button = Button(title='Branches', type='postback', payload='branches')
-        hours_button = Button(title='Store Hours', type='postback', payload='schedule')
+        hours_button = Button(title='Contact Info & Store Hours', type='postback', payload='schedule')
         prices_button = Button(title='Price Check', type='postback', payload='prices')
         buttons = [branches_button, hours_button, prices_button]
         text = 'Hi! how may I help you?'
@@ -116,21 +116,14 @@ def get_message(text, recipient_id, branch_list):
             }
           ]
         }
+        send_message(recipient_id, 'Click the link below to see the '
+                     + 'branch location.')
         bot.send_message(recipient_id, {
             'attachment':{
                 'type': 'template',
                 'payload': payload
             }
         })
-        return "success"
-    else:
-        help_button = Button(title='Help', type='postback', payload='help')
-        buttons = [help_button]
-        text = 'Hi! We are happy to help you :) ' \
-               'TYPE help or click on the help button ' \
-               'so that we could assist you'
-
-        result = bot.send_button_message(recipient_id, text, buttons)
         return "success"
 
 #uses PyMessenger to send response to user
@@ -170,12 +163,50 @@ def send_products(recipient_id):
 
 def send_menu(recipient_id):
     branches_button = Button(title='Branches', type='postback', payload='branches')
-    hours_button = Button(title='Store Hours', type='postback', payload='schedule')
+    hours_button = Button(title='Store Hours & Contact Info', type='postback', payload='schedule')
     prices_button = Button(title='Price Check', type='postback', payload='prices')
     buttons = [branches_button, hours_button, prices_button]
     text = 'Hi! how may I help you?'
     result = bot.send_button_message(recipient_id, text, buttons)
     return 'success'
+
+def set_persistent_menu(access_token):
+    url = "https://graph.facebook.com/v2.6/me/messenger_profile?access_token={}".format(access_token)
+
+    payload = {
+      "get_started": {
+        "payload": "Get started"
+      },
+      "persistent_menu":[
+        {
+          "locale":"default",
+          "composer_input_disabled": 'false',
+          "call_to_actions":[
+            {
+              "title":"Ask Help",
+              "type":"postback",
+              "payload":"help"
+            }
+          ]
+        }
+      ]
+    }
+
+    response = requests.post(
+        url,
+        json=payload
+    )
+    return response.json()
+
+ACCESS_TOKEN = os.environ['ACCESS_TOKEN']
+VERIFY_TOKEN = os.environ['VERIFY_TOKEN']
+
+bot = Bot (ACCESS_TOKEN)
+branch_locations = []
+with open("branches.json") as f:
+    branch_locations = json.load(f)
+
+set_persistent_menu(ACCESS_TOKEN)
 
 if __name__ == "__main__":
     app.run()
