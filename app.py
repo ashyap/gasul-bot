@@ -74,17 +74,17 @@ def get_message(text, recipient_id, branch_list):
         result = bot.send_button_message(recipient_id, text, buttons)
         return "success"
     elif text.lower() == '11kg':
-        send_message(recipient_id, '11kg content only is P826, Prices are '
+        send_message(recipient_id, '11kg content only is P848, Prices are '
                      + 'subject to change without notice')
         bot.send_image_url(recipient_id, "https://i.imgur.com/zw5XWAc.jpg")
         return "success"
     elif text.lower() == '2.7kg':
-        send_message(recipient_id, '2.7kg content only is P270, Prices are '
+        send_message(recipient_id, '2.7kg content only is P275, Prices are '
                      + 'subject to change without notice')
         bot.send_image_url(recipient_id, "https://i.imgur.com/CQPAgOA.jpg")
         return "success"
     elif text.lower() == '7kg':
-        send_message(recipient_id, '7kg content only is P535, Prices are '
+        send_message(recipient_id, '7kg content only is P549, Prices are '
                      + 'subject to change without notice')
         bot.send_image_url(recipient_id, "https://i.imgur.com/5tdOCwY.jpg")
         return "success"
